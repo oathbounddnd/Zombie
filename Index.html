@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <title>Apocalypse Radio</title>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #333 0%, #111 70%);
+            color: #ffaa00;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .radio {
+            background: #0b0b0b;
+            border: 4px solid #ffaa00;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.15);
+            position: relative;
+            transition: box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+        .radio.warmup {
+            box-shadow: 0 0 25px rgba(255, 170, 0, 0.6);
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .title {
+            font-size: 16px;
+            letter-spacing: 3px;
+            color: #ffaa00;
+            text-shadow: 0 0 10px #ffaa00;
+            flex: 1;
+            min-width: 180px;
+        }
+        .right-panel {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .power-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #333;
+            border: 2px solid #555;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.6);
+        }
+        .power-light.on {
+            background: #ffe66a;
+            border-color: #ffea9c;
+            animation: pulse 1s infinite alternate;
+            box-shadow: 0 0 12px rgba(255,230,106,0.8);
+        }
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+        .broadcast-time {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            color: #ccc;
+        }
+        .reset-btn {
+            background: #222;
+            border: 2px solid #ffaa00;
+            color: #ffaa00;
+            padding: 8px 12px;
+            font-size: 9px;
+            font-family: monospace;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        .reset-btn:hover, .reset-btn:active {
+            background: rgba(255, 170, 0, 0.1);
+            box-shadow: 0 0 8px rgba(255, 170, 0, 0.4);
+        }
+        .display {
+            background: #000;
+            border: 2px solid #ffaa00;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        .display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 170, 0, 0.03) 2px,
+                rgba(255, 170, 0, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+        .display::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 170, 0, 0.02) 50%,
+                transparent 100%
+            );
+            animation: scanline 3s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 11;
+        }
+        @keyframes scanline {
+            0%, 100% { transform: translateX(-100%); opacity: 0; }
+            50% { transform: translateX(100%); opacity: 1; }
+        }
+        .display-left {
+            text-align: center;
+            position: relative;
+            z-index: 5;
+            order: 1;
+        }
+        .display-right {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+            z-index: 5;
+            order: 2;
+        }
+        .frequency {
+            font-size: 32px;
+            color: #ffaa00;
+            font-weight: bold;
+            text-shadow: 0 0 15px #ffaa00;
+            line-height: 1;
+            min-height: 32px;
+        }
+        .station-name {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #ffcc66;
+            min-height: 14px;
+        }
+        .status {
+            margin-top: 8px;
+            font-size: 12px;
+            min-height: 14px;
+            color: #cc8800;
+        }
+        .track-info {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #888;
+            min-height: 13px;
+        }
+        .power-btn {
+            background: #222;
+            border: 3px solid #ff0000;
+            color: #ff0000;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-family: monospace;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+        .power-btn.on {
+            background: #ff0000;
+            color: #fff;
+            box-shadow: 0 0 20px #ff0000;
+        }
+
+        /* Station buttons */
+        .station-selector {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+            border-radius: 10px;
+        }
+        .station-selector h3 {
+            margin: 0 0 15px 0;
+            font-size: 12px;
+            color: #ffaa00;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .station-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .station-btn {
+            background: #222;
+            border: 2px solid #666;
+            color: #ccc;
+            padding: 12px 8px;
+            font-size: 10px;
+            font-family: monospace;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            line-height: 1.2;
+            position: relative;
+            min-height: 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        .station-btn:hover, .station-btn:active {
+            border-color: #ffaa00;
+            color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+        }
+        .station-btn.active {
+            background: #ffaa00;
+            color: #000;
+            border-color: #ffaa00;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+        .station-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .station-freq {
+            font-weight: bold;
+            display: block;
+            font-size: 11px;
+        }
+        .station-call {
+            font-size: 8px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        .hotkey-hint {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 7px;
+            color: #666;
+            background: rgba(0,0,0,0.6);
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+        .station-btn:hover .hotkey-hint, .station-btn:active .hotkey-hint {
+            color: #ffaa00;
+        }
+
+        /* Volume control */
+        .volume-section {
+            margin: 15px 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .volume-label {
+            font-size: 11px;
+            color: #cc8800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .volume-control {
+            position: relative;
+            width: 150px;
+            flex: 1;
+            max-width: 200px;
+        }
+        .volume-slider {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            outline: none;
+            border: 1px solid #555;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffaa00;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
+        }
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ffaa00;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(255, 170, 0, 0.6);
+        }
+        .volume-display {
+            font-size: 11px;
+            color: #ffaa00;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* Static noise visualization */
+        .static-indicator {
+            width: 36px;
+            height: 18px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .static-indicator.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 1px,
+                rgba(255, 170, 0, 0.3) 1px,
+                rgba(255, 170, 0, 0.3) 2px
+            );
+            animation: static-noise 0.1s infinite linear;
+        }
+        @keyframes static-noise {
+            0% { opacity: 0.3; transform: translateX(0); }
+            50% { opacity: 0.7; transform: translateX(1px); }
+            100% { opacity: 0.3; transform: translateX(0); }
+        }
+
+        /* Gaming HUD - Mobile optimized */
+        .gaming-hud {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            color: #ffaa00;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 9px;
+            z-index: 1000;
+            display: block;
+            max-width: 200px;
+            border: 1px solid rgba(255, 170, 0, 0.3);
+        }
+
+        /* Mobile-specific adjustments */
+        @media (max-width: 480px) {
+            .radio {
+                padding: 15px;
+                border-radius: 15px;
+            }
+            
+            .title {
+                font-size: 14px;
+                letter-spacing: 2px;
+            }
+            
+            .frequency {
+                font-size: 28px;
+            }
+            
+            .station-buttons {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            
+            .station-btn {
+                padding: 10px 6px;
+                font-size: 9px;
+                min-height: 44px;
+            }
+            
+            .station-freq {
+                font-size: 10px;
+            }
+            
+            .station-call {
+                font-size: 7px;
+            }
+            
+            .gaming-hud {
+                bottom: 5px;
+                right: 5px;
+                font-size: 8px;
+                padding: 4px 8px;
+            }
+            
+            .volume-control {
+                width: 120px;
+            }
+            
+            .top-bar {
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+            
+            .right-panel {
+                justify-content: center;
+            }
+        }
+
+        /* Emergency/Apocalypse styling */
+        .emergency {
+            color: #ff4444 !important;
+            animation: emergency-blink 0.5s infinite alternate;
+            text-shadow: 0 0 10px #ff4444 !important;
+        }
+        @keyframes emergency-blink {
+            0% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .low-battery {
+            color: #ff8800 !important;
+            animation: battery-warning 2s infinite;
+        }
+        @keyframes battery-warning {
+            0%, 90% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="radio" id="radio">
+        <div class="top-bar">
+            <div class="title">APOCALYPSE RADIO</div>
+            <div class="right-panel">
+                <div class="power-light" id="powerLight"></div>
+                <div class="broadcast-time" id="broadcastTime">00:00</div>
+                <button class="reset-btn" id="resetBtn">Reset Stations</button>
+            </div>
+        </div>
+
+        <div class="display">
+            <div class="display-left">
+                <div class="frequency" id="frequency">---.--</div>
+                <div class="station-name" id="stationName">Turn on radio</div>
+                <div class="status" id="status"></div>
+                <div class="track-info" id="trackInfo"></div>
+            </div>
+            <div class="display-right">
+                <button class="power-btn" id="powerBtn">Power</button>
+                <div class="static-indicator" id="staticIndicator"></div>
+            </div>
+        </div>
+
+        <div class="station-selector" id="stationSelector">
+            <h3>Station Select</h3>
+            <div class="station-buttons" id="stationButtons">
+                <!-- Station buttons will be generated here -->
+            </div>
+        </div>
+
+        <div class="volume-section">
+            <div class="volume-label">Volume</div>
+            <div class="volume-control">
+                <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="70">
+            </div>
+            <div class="volume-display" id="volumeDisplay">70</div>
+        </div>
+    </div>
+
+    <!-- Gaming HUD for immersion -->
+    <div class="gaming-hud" id="gamingHud">
+        <div>Radio: <span id="hudStation">OFF</span></div>
+        <div>Vol: <span id="hudVolume">70% | Battery: 100%</span></div>
+        <div style="font-size: 8px; opacity: 0.7;">1-9: Stations | P: Power | M: Mute | ↑↓: Volume</div>
+    </div>
+
+    <script>
+        class ApocalypseRadio {
+            constructor() {
+                // Radio state
+                this.powered = false;
+                this.currentStation = null;
+                this.currentAudio = null;
+                this.volume = 70;
+                
+                // Station data - your original stations
+                this.stations = [
+                    { freq: '88.5', name: 'CHANNEL 7', folder: '88.5-Channel 7' },
+                    { freq: '89.6', name: 'LADY LUCK', folder: '89.6-Lady Luck' },
+                    { freq: '90.1', name: 'EMERGENCY ALERT WDC', folder: '90.1-Emergency Alert WDC' },
+                    { freq: '92.0', name: 'PARANORMAL FREQUENCY', folder: '92.0-Paranormal Frequency' },
+                    { freq: '93.4', name: 'WBLN FM', folder: '93.4-WBLN FM' },
+                    { freq: '97.2', name: 'ZASR', folder: '97.2-ZASR' },
+                    { freq: '98.8', name: 'THE JOY OF SURVIVING', folder: '98.8-The Joy of Surviving' },
+                    { freq: '100.3', name: 'LATE-NIGHT REVIVAL', folder: '100.3-Late-Night Revival' },
+                    { freq: '101.7', name: '101.7-The Wire', folder: '101.7-The Wire' },
+                    { freq: '102.5', name: 'APOCALYPSE RADIO', folder: '102.5-Apocalypse Radio' }
+                ];
+                
+                // Station state tracking
+                this.stationStates = {};
+                this.stationMaxTracks = {};
+                this.trackDurations = {};
+                this.stationOffAir = {};
+                
+                // Apocalypse features
+                this.batteryLevel = 100;
+                this.staticIsPlaying = false;
+                
+                // Get DOM elements
+                this.initElements();
+                this.initStaticGenerator();
+                this.setupEventListeners();
+                this.generateStationButtons();
+                this.loadState();
+                this.updateClock();
+                
+                // Gaming enhancements
+                this.setupKeyboardShortcuts();
+                this.setupAutoRecovery();
+                this.initApocalypseFeatures();
+                
+                console.log('🎵 Radio ready!');
+            }
+            
+            initElements() {
+                this.radio = document.getElementById('radio');
+                this.powerBtn = document.getElementById('powerBtn');
+                this.powerLight = document.getElementById('powerLight');
+                this.frequency = document.getElementById('frequency');
+                this.stationName = document.getElementById('stationName');
+                this.status = document.getElementById('status');
+                this.trackInfo = document.getElementById('trackInfo');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.broadcastTime = document.getElementById('broadcastTime');
+                this.volumeSlider = document.getElementById('volumeSlider');
+                this.volumeDisplay = document.getElementById('volumeDisplay');
+                this.staticIndicator = document.getElementById('staticIndicator');
+                this.stationButtons = document.getElementById('stationButtons');
+                this.stationSelector = document.getElementById('stationSelector');
+                this.gamingHud = document.getElementById('gamingHud');
+                this.hudStation = document.getElementById('hudStation');
+                this.hudVolume = document.getElementById('hudVolume');
+            }
+            
+            initStaticGenerator() {
+                // Don't create AudioContext immediately - wait for user interaction
+                this.audioContext = null;
+                this.staticIsPlaying = false;
+            }
+            
+            createAudioContextIfNeeded() {
+                if (this.audioContext) return;
+                
+                try {
+                    // Create Web Audio API context for static generation
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.staticGainNode = this.audioContext.createGain();
+                    this.staticGainNode.connect(this.audioContext.destination);
+                    this.staticGainNode.gain.value = 0;
+                    
+                    // Create white noise buffer
+                    const bufferSize = this.audioContext.sampleRate * 2; // 2 seconds of static
+                    this.staticBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                    const output = this.staticBuffer.getChannelData(0);
+                    
+                    // Generate white noise
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1; // Random values between -1 and 1
+                    }
+                } catch (e) {
+                    console.warn('Web Audio API not available, falling back to silent mode');
+                    this.audioContext = null;
+                }
+            }
+            
+            setupEventListeners() {
+                this.powerBtn.addEventListener('click', () => this.togglePower());
+                this.resetBtn.addEventListener('click', () => this.resetAll());
+                this.volumeSlider.addEventListener('input', (e) => this.setVolume(e.target.value));
+                
+                // Auto-save state periodically
+                setInterval(() => {
+                    this.saveCurrentStationState();
+                    this.saveState();
+                }, 2000);
+                
+                // Save state on page unload
+                window.addEventListener('beforeunload', () => this.saveState());
+                
+                // Prevent audio interruption on tab change
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && this.powered && this.currentAudio) {
+                        // Resume audio if it was paused by browser
+                        if (this.currentAudio.paused) {
+                            this.currentAudio.play().catch(() => {});
+                        }
+                    }
+                });
+            }
+            
+            // Continue with the rest of the radio functionality...
+            // [Truncating here due to length - the file would continue with all the other methods]
+            
+            generateStationButtons() {
+                this.stationButtons.innerHTML = '';
+                
+                this.stations.forEach((station, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'station-btn';
+                    btn.innerHTML = `
+                        <span class="station-freq">${station.freq} FM</span>
+                        <span class="station-call">${station.name}</span>
+                        <span class="hotkey-hint">${index + 1}</span>
+                    `;
+                    btn.addEventListener('click', () => this.selectStation(index));
+                    this.stationButtons.appendChild(btn);
+                });
+            }
+            
+            togglePower() {
+                this.powered = !this.powered;
+                
+                if (this.powered) {
+                    // Create AudioContext on first user interaction
+                    this.createAudioContextIfNeeded();
+                    
+                    this.powerBtn.textContent = 'ON';
+                    this.powerBtn.classList.add('on');
+                    this.powerLight.classList.add('on');
+                    this.radio.classList.add('warmup');
+                    this.stationSelector.style.opacity = '1';
+                    this.stationName.textContent = 'Select a station';
+                    this.frequency.textContent = '---.--';
+                    this.playStatic();
+                } else {
+                    this.powerBtn.textContent = 'POWER';
+                    this.powerBtn.classList.remove('on');
+                    this.powerLight.classList.remove('on');
+                    this.radio.classList.remove('warmup');
+                    this.stationSelector.style.opacity = '0.3';
+                    this.stationName.textContent = 'Turn on radio';
+                    this.frequency.textContent = '---.--';
+                    this.status.textContent = '';
+                    this.trackInfo.textContent = '';
+                    this.stopCurrentStation();
+                    this.stopStatic();
+                    this.updateStationButtons();
+                }
+                
+                this.saveState();
+                this.updateHUD();
+            }
+            
+            playStatic() {
+                if (!this.audioContext || this.staticIsPlaying) return;
+                
+                try {
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    
+                    this.staticSource = this.audioContext.createBufferSource();
+                    this.staticSource.buffer = this.staticBuffer;
+                    this.staticSource.loop = true;
+                    this.staticSource.connect(this.staticGainNode);
+                    
+                    const staticVolume = Math.max(0.02, (this.volume / 100) * 0.15);
+                    this.staticGainNode.gain.setValueAtTime(staticVolume, this.audioContext.currentTime);
+                    
+                    this.staticSource.start();
+                    this.staticIsPlaying = true;
+                    this.staticIndicator.classList.add('active');
+                } catch (e) {
+                    console.warn('Could not play static:', e);
+                    // Fallback: just show visual indicator
+                    this.staticIndicator.classList.add('active');
+                }
+            }
+            
+            stopStatic() {
+                if (this.staticSource && this.staticIsPlaying) {
+                    try {
+                        this.staticSource.stop();
+                        this.staticSource = null;
+                        this.staticIsPlaying = false;
+                    } catch (e) {}
+                }
+                this.staticIndicator.classList.remove('active');
+            }
+            
+            setVolume(value) {
+                this.volume = parseInt(value);
+                this.volumeDisplay.textContent = this.volume;
+                
+                if (this.currentAudio) {
+                    this.currentAudio.volume = this.volume / 100;
+                }
+                
+                if (this.audioContext && this.staticGainNode && this.staticIsPlaying) {
+                    const staticVolume = Math.max(0.02, (this.volume / 100) * 0.15);
+                    this.staticGainNode.gain.setValueAtTime(staticVolume, this.audioContext.currentTime);
+                }
+                
+                this.saveState();
+                this.updateHUD();
+            }
+            
+            updateHUD() {
+                if (this.currentStation) {
+                    this.hudStation.textContent = `${this.currentStation.freq} ${this.currentStation.name}`;
+                } else if (this.powered) {
+                    this.hudStation.textContent = 'STATIC';
+                } else {
+                    this.hudStation.textContent = 'OFF';
+                }
+                
+                const batteryLevel = this.batteryLevel || 100;
+                this.hudVolume.textContent = `${this.volume}% | Battery: ${Math.round(batteryLevel)}%`;
+            }
+            
+            updateClock() {
+                const now = new Date();
+                const time = now.toLocaleTimeString('en-US', { 
+                    hour12: false, 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                this.broadcastTime.textContent = time;
+                setTimeout(() => this.updateClock(), 1000);
+            }
+            
+            // Placeholder methods - would include all the other functionality
+            selectStation(index) {
+                if (!this.powered) return;
+                
+                const station = this.stations[index];
+                if (!station) return;
+                
+                // Save current station state before switching
+                if (this.currentStation && this.currentAudio) {
+                    this.saveCurrentStationState();
+                }
+                
+                // Stop current audio
+                this.stopCurrentStation();
+                
+                // Set new station
+                this.currentStation = station;
+                this.frequency.textContent = station.freq;
+                this.stationName.textContent = station.name;
+                this.status.textContent = 'TUNING...';
+                this.trackInfo.textContent = '';
+                
+                // Update button states
+                this.updateStationButtons(index);
+                
+                // Start loading the station
+                setTimeout(() => this.loadStation(station), 300);
+                
+                this.saveState();
+                this.updateHUD();
+            }
+            
+            loadStation(station, userSelected = false) {
+                // Check if station is currently off-air
+                if (this.isStationOffAir(station.folder)) {
+                    this.showOffAirStatus(station);
+                    return;
+                }
+                
+                const state = this.stationStates[station.folder];
+                let trackNumber = 1;
+                let position = 0;
+                
+                // Simple: just use whatever was saved, no time calculations
+                if (state) {
+                    trackNumber = state.trackNumber || 1;
+                    position = state.position || 0;
+                }
+                
+                console.log(`📻 Loading ${station.name} - track ${trackNumber} at ${position}s`);
+                this.loadTrack(station, trackNumber, position);
+            }
+            
+            loadTrack(station, trackNumber, position = 0) {
+                const oggPath = `${station.folder}/${trackNumber}.ogg`;
+                const mp3Path = `${station.folder}/${trackNumber}.mp3`;
+                
+                console.log(`🔍 Loading: ${station.name} track ${trackNumber}`);
+                
+                // Stop any existing audio
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.src = '';
+                    this.currentAudio = null;
+                }
+                
+                const audio = new Audio();
+                audio.volume = this.volume / 100;
+                this.currentAudio = audio;
+                
+                // Track loading attempts
+                let oggAttempted = false;
+                let mp3Attempted = false;
+                
+                const tryOgg = () => {
+                    if (oggAttempted) return;
+                    oggAttempted = true;
+                    
+                    audio.src = oggPath;
+                    console.log(`🎵 Trying OGG: ${oggPath}`);
+                    
+                    const onLoadedData = () => {
+                        console.log(`✅ Loaded OGG: ${oggPath}`);
+                        this.playTrack(audio, station, trackNumber, position);
+                    };
+                    
+                    const onError = () => {
+                        console.log(`❌ Failed OGG: ${oggPath}`);
+                        if (!mp3Attempted) {
+                            tryMp3();
+                        } else {
+                            handleCompleteFailure();
+                        }
+                    };
+                    
+                    audio.addEventListener('loadeddata', onLoadedData, { once: true });
+                    audio.addEventListener('error', onError, { once: true });
+                    audio.load();
+                };
+                
+                const tryMp3 = () => {
+                    if (mp3Attempted) return;
+                    mp3Attempted = true;
+                    
+                    // Remove previous event listeners
+                    audio.removeEventListener('loadeddata', () => {});
+                    audio.removeEventListener('error', () => {});
+                    
+                    audio.src = mp3Path;
+                    console.log(`🎵 Trying MP3: ${mp3Path}`);
+                    
+                    const onLoadedData = () => {
+                        console.log(`✅ Loaded MP3: ${mp3Path}`);
+                        this.playTrack(audio, station, trackNumber, position);
+                    };
+                    
+                    const onError = () => {
+                        console.log(`❌ Failed MP3: ${mp3Path}`);
+                        handleCompleteFailure();
+                    };
+                    
+                    audio.addEventListener('loadeddata', onLoadedData, { once: true });
+                    audio.addEventListener('error', onError, { once: true });
+                    audio.load();
+                };
+                
+                const handleCompleteFailure = () => {
+                    console.log(`💥 Both formats failed for ${station.folder} track ${trackNumber}`);
+                    
+                    if (trackNumber > 1) {
+                        // This track doesn't exist, but previous tracks do
+                        // Set max tracks and try track 1
+                        this.stationMaxTracks[station.folder] = trackNumber - 1;
+                        console.log(`📝 Set max tracks for ${station.folder}: ${trackNumber - 1}`);
+                        
+                        // Try track 1 instead
+                        this.stationStates[station.folder] = {
+                            trackNumber: 1,
+                            position: 0,
+                            lastPlayed: Date.now()
+                        };
+                        this.loadTrack(station, 1, 0);
+                    } else {
+                        // Even track 1 doesn't exist - show off air
+                        console.log(`💀 No tracks found at all for ${station.folder}`);
+                        this.showOffAir();
+                    }
+                };
+                
+                // Add track end handler
+                audio.addEventListener('ended', () => {
+                    this.handleTrackEnd(station, trackNumber);
+                });
+                
+                // Start with OGG attempt
+                tryOgg();
+            }
+            
+            playTrack(audio, station, trackNumber, position) {
+                const startPlayback = () => {
+                    this.stopStatic();
+                    this.status.textContent = 'ON AIR';
+                    this.trackInfo.textContent = `Track ${trackNumber}`;
+                    
+                    // Store track duration when we learn it
+                    if (audio.duration && isFinite(audio.duration)) {
+                        if (!this.trackDurations[station.folder]) {
+                            this.trackDurations[station.folder] = {};
+                        }
+                        this.trackDurations[station.folder][trackNumber] = audio.duration;
+                        console.log(`📏 Learned duration for ${station.folder} track ${trackNumber}: ${audio.duration}s`);
+                    }
+                    
+                    // Only seek if position is valid and not too close to the end
+                    if (position > 0 && audio.duration && position < (audio.duration - 1)) {
+                        audio.currentTime = position;
+                        console.log(`⏭️ Seeking to ${position}s in track ${trackNumber}`);
+                    }
+                    
+                    // Update state with current time
+                    this.stationStates[station.folder] = {
+                        trackNumber: trackNumber,
+                        position: audio.currentTime || 0,
+                        lastPlayed: Date.now()
+                    };
+                    
+                    console.log(`🎵 Now playing: ${station.name} - Track ${trackNumber} (${audio.currentTime || 0}s)`);
+                    
+                    // Save state immediately when track starts
+                    this.saveState();
+                };
+                
+                audio.play().then(() => {
+                    startPlayback();
+                }).catch((error) => {
+                    console.warn('Autoplay prevented:', error);
+                    // Show play button or handle autoplay prevention
+                    this.status.textContent = 'CLICK TO PLAY';
+                    this.trackInfo.textContent = `Track ${trackNumber} - Click power to play`;
+                    this.playStatic();
+                });
+            }
+            
+            handleTrackEnd(station, trackNumber) {
+                console.log(`📻 Track ${trackNumber} ended for ${station.name}`);
+                
+                // Put station off-air for 20 minutes after each episode
+                this.putStationOffAir(station.folder, 'End of episode', 20);
+                
+                // Calculate next track for when station comes back
+                const maxTracks = this.stationMaxTracks[station.folder];
+                let nextTrack = trackNumber + 1;
+                
+                // If we know the max tracks and we're at the end, loop back to start
+                if (maxTracks && nextTrack > maxTracks) {
+                    nextTrack = 1; // Loop back to start
+                    console.log(`🔄 End of all tracks reached for ${station.name}, will restart from track 1 in 20 minutes`);
+                }
+                
+                // Update state for when station returns (20 minutes from now)
+                this.stationStates[station.folder] = {
+                    trackNumber: nextTrack,
+                    position: 0,
+                    lastPlayed: Date.now() + (20 * 60 * 1000) // 20 minutes from now
+                };
+                
+                // Show off-air status with countdown
+                this.showOffAirStatus(station);
+                
+                console.log(`📴 ${station.name} off-air for 20 minutes, next track: ${nextTrack}`);
+            }
+            
+            isStationOffAir(stationFolder) {
+                const offAirData = this.stationOffAir[stationFolder];
+                if (!offAirData) return false;
+                return Date.now() < offAirData.offUntil;
+            }
+            
+            putStationOffAir(stationFolder, reason = 'End of broadcast', durationMinutes = 20) {
+                this.stationOffAir[stationFolder] = {
+                    offUntil: Date.now() + (durationMinutes * 60 * 1000),
+                    reason: reason
+                };
+            }
+            
+            getOffAirCountdown(stationFolder) {
+                const offAirData = this.stationOffAir[stationFolder];
+                if (!offAirData) return '';
+                
+                const remaining = Math.max(0, offAirData.offUntil - Date.now());
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            showOffAirStatus(station) {
+                this.status.textContent = 'OFF AIR';
+                this.trackInfo.textContent = `Next broadcast in ${this.getOffAirCountdown(station.folder)}`;
+                this.playStatic();
+                
+                // Update countdown every second
+                const updateCountdown = () => {
+                    if (this.currentStation && this.currentStation.folder === station.folder) {
+                        if (this.isStationOffAir(station.folder)) {
+                            this.trackInfo.textContent = `Next broadcast in ${this.getOffAirCountdown(station.folder)}`;
+                            setTimeout(updateCountdown, 1000);
+                        } else {
+                            // Station is back on air
+                            this.trackInfo.textContent = 'Station back on air - tune away and back';
+                        }
+                    }
+                };
+                setTimeout(updateCountdown, 1000);
+            }
+            
+            showOffAir() {
+                this.status.textContent = 'OFF AIR';
+                this.trackInfo.textContent = 'No signal';
+                this.playStatic();
+            }
+            
+            getTrackDuration(stationFolder, trackNumber) {
+                if (!this.trackDurations[stationFolder]) return 0;
+                return this.trackDurations[stationFolder][trackNumber] || 0;
+            }
+            
+            updateStationButtons(activeIndex = -1) {
+                const buttons = this.stationButtons.querySelectorAll('.station-btn');
+                buttons.forEach((btn, index) => {
+                    btn.classList.remove('active');
+                    if (this.powered) {
+                        btn.classList.remove('disabled');
+                    } else {
+                        btn.classList.add('disabled');
+                    }
+                    
+                    if (index === activeIndex) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+            
+            stopCurrentStation() {
+                if (this.currentAudio) {
+                    this.currentAudio.pause();
+                    this.currentAudio.src = '';
+                    this.currentAudio = null;
+                }
+            }
+            
+            saveCurrentStationState() {
+                if (this.currentStation && this.currentAudio) {
+                    this.stationStates[this.currentStation.folder] = {
+                        trackNumber: this.getCurrentTrackNumber(),
+                        position: this.currentAudio.currentTime || 0,
+                        lastPlayed: Date.now()
+                    };
+                }
+            }
+            
+            getCurrentTrackNumber() {
+                if (!this.currentAudio || !this.currentAudio.src) return 1;
+                const match = this.currentAudio.src.match(/\/(\d+)\.(ogg|mp3)$/);
+                return match ? parseInt(match[1]) : 1;
+            }
+            
+            saveState() {
+                try {
+                    const state = {
+                        powered: this.powered,
+                        currentStationIndex: this.currentStation ? 
+                            this.stations.findIndex(s => s.folder === this.currentStation.folder) : -1,
+                        volume: this.volume,
+                        stationStates: this.stationStates,
+                        stationMaxTracks: this.stationMaxTracks,
+                        trackDurations: this.trackDurations,
+                        stationOffAir: this.stationOffAir,
+                        batteryLevel: this.batteryLevel || 100
+                    };
+                    localStorage.setItem('simpleRadioState', JSON.stringify(state));
+                    // Only log when something important changes
+                    if (this.currentStation) {
+                        console.log(`💾 Saved progress: ${this.currentStation.name} track ${this.getCurrentTrackNumber()}`);
+                    }
+                } catch (e) {
+                    console.warn('Could not save state:', e);
+                }
+            }
+            
+            loadState() {
+                try {
+                    const saved = localStorage.getItem('simpleRadioState');
+                    if (saved) {
+                        const state = JSON.parse(saved);
+                        
+                        // Restore all saved data FIRST before any UI changes
+                        this.stationStates = state.stationStates || {};
+                        this.stationMaxTracks = state.stationMaxTracks || {};
+                        this.trackDurations = state.trackDurations || {};
+                        this.stationOffAir = state.stationOffAir || {};
+                        this.batteryLevel = state.batteryLevel || 100;
+                        
+                        console.log('📻 Station data loaded -', Object.keys(this.stationStates).length, 'stations with saved progress');
+                        
+                        // Restore volume only
+                        if (state.volume !== undefined) {
+                            this.volume = state.volume;
+                            this.volumeSlider.value = this.volume;
+                            this.volumeDisplay.textContent = this.volume;
+                        }
+                        
+                        // ALWAYS start with power OFF on page load
+                        this.powered = false;
+                        this.powerBtn.textContent = 'POWER';
+                        this.powerBtn.classList.remove('on');
+                        this.powerLight.classList.remove('on');
+                        this.radio.classList.remove('warmup');
+                        this.stationSelector.style.opacity = '0.3';
+                        this.stationName.textContent = 'Turn on radio';
+                        this.frequency.textContent = '---.--';
+                        
+                        console.log('Radio powered OFF on page load (user must turn on manually)');
+                        
+                        // Always show gaming HUD
+                        this.gamingHud.classList.add('visible');
+                        this.updateHUD();
+                    } else {
+                        console.log('No saved state found - starting fresh');
+                    }
+                } catch (e) {
+                    console.warn('Could not load state:', e);
+                }
+            }
+            
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Only work when radio is powered
+                    if (!this.powered) return;
+                    
+                    // Check if user is typing in an input field
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                    
+                    switch(e.code) {
+                        case 'Digit1':
+                        case 'Digit2':
+                        case 'Digit3':
+                        case 'Digit4':
+                        case 'Digit5':
+                        case 'Digit6':
+                        case 'Digit7':
+                        case 'Digit8':
+                        case 'Digit9':
+                            e.preventDefault();
+                            const stationIndex = parseInt(e.code.slice(-1)) - 1;
+                            if (stationIndex < this.stations.length) {
+                                this.selectStation(stationIndex);
+                            }
+                            break;
+                        case 'KeyP':
+                            e.preventDefault();
+                            this.togglePower();
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            this.adjustVolume(5);
+                            break;
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            this.adjustVolume(-5);
+                            break;
+                        case 'KeyM':
+                            e.preventDefault();
+                            this.toggleMute();
+                            break;
+                    }
+                });
+            }
+            
+            adjustVolume(delta) {
+                const newVolume = Math.max(0, Math.min(100, this.volume + delta));
+                this.volumeSlider.value = newVolume;
+                this.setVolume(newVolume);
+            }
+            
+            resetAll() {
+                if (confirm('Reset all stations to track 1? This will clear all progress.')) {
+                    // Reset all station states to track 1, position 0, ready to play
+                    this.stationStates = {};
+                    this.stations.forEach(station => {
+                        this.stationStates[station.folder] = {
+                            trackNumber: 1,
+                            position: 0,
+                            lastPlayed: Date.now() // Current time so they start fresh
+                        };
+                    });
+                    
+                    // Clear all off-air states so stations can play immediately
+                    this.stationOffAir = {};
+                    
+                    // If radio is on and has a current station, restart it from track 1
+                    if (this.powered && this.currentStation) {
+                        this.status.textContent = 'RESETTING...';
+                        this.trackInfo.textContent = 'All stations reset to track 1';
+                        
+                        // Restart current station from track 1
+                        setTimeout(() => {
+                            this.loadStation(this.currentStation);
+                        }, 1000);
+                    }
+                    
+                    // Save the reset state
+                    this.saveState();
+                    
+                    console.log('All stations reset to track 1');
+                }
+            }
+            
+            setupAutoRecovery() { 
+                // Auto-retry failed audio every 30 seconds if needed
+                setInterval(() => {
+                    if (this.powered && this.currentStation && !this.currentAudio) {
+                        this.loadStation(this.currentStation);
+                    }
+                }, 30000);
+            }
+            
+            initApocalypseFeatures() { 
+                // Placeholder for future apocalypse features
+                // (Random static bursts, emergency alerts, etc.)
+            }
+            toggleMute() { 
+                if (this.volume > 0) {
+                    this.lastVolume = this.volume;
+                    this.setVolume(0);
+                    this.volumeSlider.value = 0;
+                } else {
+                    const restoreVolume = this.lastVolume || 70;
+                    this.setVolume(restoreVolume);
+                    this.volumeSlider.value = restoreVolume;
+                }
+            }
+        }
+
+        // Initialize radio when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.radio = new ApocalypseRadio();
+        });
+    </script>
+</body>
+</html>

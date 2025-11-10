@@ -1,0 +1,20 @@
+{
+  "name": "Apocalypse Radio",
+  "short_name": "Radio",
+  "description": "Post-apocalyptic radio station with immersive audio experience",
+  "start_url": "./radio_mobile.html",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#ffaa00",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMwYjBiMGIiLz4KPHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjE4NCIgaGVpZ2h0PSIxODQiIHJ4PSIyMCIgc3Ryb2tlPSIjZmZhYTAwIiBzdHJva2Utd2lkdGg9IjgiLz4KPGC2lyY3xlIGN4PSI5NiIgY3k9IjcwIiByPSIzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZhYTAwIiBzdHJva2Utd2lkdGg9IjQiLz4KPGNpcmNsZSBjeD0iOTYiIGN5PSI3MCIgcj0iMTAiIGZpbGw9IiNmZmFhMDAiLz4KPHN2ZyB4PSIzMCIgeT0iMTIwIiB3aWR0aD0iMTMyIiBoZWlnaHQ9IjIwIj4KICA8cmVjdCB3aWR0aD0iMTMyIiBoZWlnaHQ9IjIwIiByeD0iMTAiIGZpbGw9IiMzMzMiLz4KICA8cmVjdCB4PSI0IiB5PSI0IiB3aWR0aD0iMTI0IiBoZWlnaHQ9IjEyIiByeD0iNiIgZmlsbD0iIzY2NiIvPgo8L3N2Zz4KPC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["entertainment", "multimedia"],
+  "scope": "./",
+  "lang": "en"
+}
